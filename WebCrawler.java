@@ -32,24 +32,7 @@ public class WebCrawler {
         return null;
     }
 
-    public void startCrawler(String start) {
-        
-        conn.connect();
-        conn.createTable();
-        conn.insertRow(start, 0);
-        
-        List<Future<Void>> tasks = new ArrayList<>();
-
-        while (true) {
-            String visit = getUnvisited();
-
-            if (visit == null) {
-                break;
-            }
-
-            CrawlerThread task = new CrawlerThread(visit, conn);
-            tasks.add(executor.submit(task));
-        }
+    private void finishCrawler(List<Future<Void>> tasks) {
 
         for (Future<Void> t : tasks) {
             try {
@@ -61,6 +44,26 @@ public class WebCrawler {
 
         executor.shutdown();
         conn.disconnect();
+    }
+    
+    public void startCrawler(String start) {
+        
+        conn.connect();
+        conn.createTable();
+        conn.insertRow(start, 0);
+        
+        List<Future<Void>> tasks = new ArrayList<>();
+
+        while (true) {
+            String visit = getUnvisited();
+
+            if (visit == null) break;
+
+            CrawlerThread task = new CrawlerThread(visit, conn);
+            tasks.add(executor.submit(task));
+        }
+
+        finishCrawler(tasks);
     }
 
     public static void main(String[] args) {
