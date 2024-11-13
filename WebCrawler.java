@@ -1,38 +1,70 @@
 package net.webcrawler;
 
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.Scanner;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.parser.Parser;
-import org.jsoup.select.Elements;
-
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class WebCrawler {
-    public static void main(String ...args) {
-        String url = "https://ii.uken.krakow.pl";
-        if (args.length == 1) {
-            url = args[0];
-        }
+    
+    private final DBConn conn;
+    private final ExecutorService executor;
 
-        startCrawler(url);
+    public WebCrawler(int threads) {
+        
+        this.conn = new DBConn();
+        this.executor = Executors.newFixedThreadPool(threads);
     }
 
-    public static void startCrawler(String url) {
-        DBConn db = new DBConn();
-        db.connect();
-        db.createTable();
-
-        try {
-
-        } catch (IOException e){
+    private String getUnvisited() {
+        
+        String sql = "SELECT url FROM urls WHERE seen = 0 LIMIT 1";
+        try (Statement stmt = conn.connect().createStatement();
+             ResultSet r = stmt.executeQuery(sql)) {
+            if (r.next()) {
+                return r.getString("url");
+            }
+        } catch (SQLException e) {
             System.out.println(e.getMessage());
-        } finally {
-            db.disconnect();
         }
+        return null;
+    }
+
+    public void startCrawler(String start) {
+        
+        conn.connect();
+        conn.createTable();
+        conn.insertRow(start, 0);
+        
+        List<Future<Void>> tasks = new ArrayList<>();
+
+        while (true) {
+            String visit = getUnvisited();
+
+            if (visit == null) {
+                break;
+            }
+
+            CrawlerThread task = new CrawlerThread(visit, conn);
+            tasks.add(executorService.submit(task));
+        }
+
+        for (Future<Void> t : tasks) {
+            try {
+                t.get();
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+        }
+
+        executorService.shutdown();
+        conn.disconnect();
+    }
+
+    public static void main(String[] args) {
+        WebCrawler crawler = new WebCrawler(10);
+        crawler.startCrawler("https://ii.up.krakow.pl");
     }
 }
