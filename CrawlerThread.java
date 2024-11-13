@@ -9,31 +9,31 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class CrawlerThread implements Callable<Void> {
+    
     private final String url;
-    private final DBConn dbConn;
+    private final DBConn conn;
 
-    public CrawlerThread(String url, DBConn dbConn) {
+    public CrawlerThread(String url, DBConn conn) {
+        
         this.url = url;
-        this.dbConn = dbConn;
+        this.conn = conn;
     }
 
     @Override
     public Void call() {
+        
         try {
             Document doc = Jsoup.connect(url).get();
-            Elements links = doc.select("a[href]");
+            Elements urls = doc.select("a[href]");
 
-            for (Element link : links) {
-                String absUrl = link.attr("abs:href");
-                dbConn.insertRow(absUrl, 0);  // 0 oznacza, że link jeszcze nie został odwiedzony
+            for (Element u : urls) {
+                String abs = link.attr("abs:href");
+                conn.insertRow(abs, 0);
             }
 
-            // Ustaw link jako odwiedzony (przy pomocy metody insertRow)
-            dbConn.insertRow(url, 1);  // Po odwiedzeniu linku zwiększamy wartość "seen" na 1
-
-            System.out.println("Processed URL: " + url);
+            dbConn.insertRow(url, 1);
         } catch (IOException e) {
-            System.out.println("Failed to crawl URL: " + url + " - " + e.getMessage());
+            System.out.println(e.getMessage());
         }
 
         return null;
