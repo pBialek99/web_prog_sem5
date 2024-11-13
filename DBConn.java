@@ -15,7 +15,7 @@ public class DBConn {
 
         try {
             conn = DriverManager.getConnection(url);
-            System.out.println("Connected to SQLite.");
+            // System.out.println("Connected to SQLite.");
             return conn;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -33,7 +33,7 @@ public class DBConn {
 
         try (Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
-            System.out.println("Table created.");
+            // System.out.println("Table created.");
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -42,13 +42,13 @@ public class DBConn {
     // row insertion
     public void insertRow(String url, int seen) {
 
-        String sql = "INSERT INTO urls (url, seen) VALUES (?, ?)";
+        String sql = "INSERT INTO urls (url, seen) VALUES (?, ?) ON UPDATE SET seen = seen + 1";
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, url);
             stmt.setInt(2, seen);
             stmt.executeUpdate();
-            System.out.println("Inserted row.");
+            // System.out.println("Inserted row.");
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -60,7 +60,7 @@ public class DBConn {
 
         try (Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
-            System.out.println("Table dropped.");
+            // System.out.println("Table dropped.");
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -72,7 +72,7 @@ public class DBConn {
             if (conn != null && !conn.isClosed()) {
                 conn.close();
                 conn = null;
-                System.out.println("Connection closed.");
+                // System.out.println("Connection closed.");
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
