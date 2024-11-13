@@ -16,7 +16,7 @@ public class WebCrawler {
         this.executor = Executors.newFixedThreadPool(threads);
     }
 
-    private String getUnvisited() {
+    private String getNext() {
         String sql = "SELECT url FROM urls WHERE seen = 0 LIMIT 1";
         
         try (Statement stmt = db.connect().createStatement();
@@ -53,7 +53,7 @@ public class WebCrawler {
         List<Future<Void>> tasks = new ArrayList<>();
 
         while (true) {
-            String visit = getUnvisited();
+            String visit = getNext();
 
             if (visit == null) break;
 
