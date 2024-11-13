@@ -7,6 +7,7 @@ import java.util.concurrent.*;
 public class WebCrawler {
     private DBConn db;
     private ExecutorService executor;
+    private int MAX_DEPTH;
 
     public WebCrawler(int threads) {
         this.db = new DBConn();
@@ -29,6 +30,13 @@ public class WebCrawler {
         return null;
     }
 
+    private void crawl(int depth, String url, List<Future<Void>> tasks) {
+        if (depth > MAX_DEPTH) return;
+
+        CrawlerThread task = new CrawlerThread(url, db, depth + 1, MAX_DEPTH);
+        tasks.add.(executor.submit(task));   
+    }
+    
     private void finishCrawler(List<Future<Void>> tasks) {
         for (Future<Void> t : tasks) {
             try {
@@ -42,27 +50,20 @@ public class WebCrawler {
         db.disconnect();
     }
     
-    public void startCrawler(String start) {
+    private void startCrawler(String start) {
         db.connect();
         db.createTable();
         db.insertRow(start, 0);
         
         List<Future<Void>> tasks = new ArrayList<>();
 
-        while (true) {
-            String visit = getNext();
-
-            if (visit == null) break;
-
-            CrawlerThread task = new CrawlerThread(visit, db);
-            tasks.add(executor.submit(task));
-        }
+        crawl(1, start, tasks)
 
         finishCrawler(tasks);
     }
 
     public static void main(String[] args) {
-        WebCrawler crawler = new WebCrawler(10);
+        WebCrawler crawler = new WebCrawler(10, 100);
         crawler.startCrawler("https://ii.up.krakow.pl");
     }
 }
