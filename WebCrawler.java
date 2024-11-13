@@ -48,7 +48,7 @@ public class WebCrawler {
             }
 
             CrawlerThread task = new CrawlerThread(visit, conn);
-            tasks.add(executorService.submit(task));
+            tasks.add(executor.submit(task));
         }
 
         for (Future<Void> t : tasks) {
