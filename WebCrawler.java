@@ -8,32 +8,31 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class WebCrawler {
-    
-    private final DBConn conn;
-    private final ExecutorService executor;
+    private DBConn db;
+    private ExecutorService executor;
 
     public WebCrawler(int threads) {
-        
-        this.conn = new DBConn();
+        this.db = new DBConn();
         this.executor = Executors.newFixedThreadPool(threads);
     }
 
     private String getUnvisited() {
-        
         String sql = "SELECT url FROM urls WHERE seen = 0 LIMIT 1";
-        try (Statement stmt = conn.connect().createStatement();
+        
+        try (Statement stmt = db.connect().createStatement();
              ResultSet r = stmt.executeQuery(sql)) {
+            
             if (r.next()) {
                 return r.getString("url");
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
+        
         return null;
     }
 
     private void finishCrawler(List<Future<Void>> tasks) {
-
         for (Future<Void> t : tasks) {
             try {
                 t.get();
@@ -43,14 +42,13 @@ public class WebCrawler {
         }
 
         executor.shutdown();
-        conn.disconnect();
+        db.disconnect();
     }
     
     public void startCrawler(String start) {
-        
-        conn.connect();
-        conn.createTable();
-        conn.insertRow(start, 0);
+        db.connect();
+        db.createTable();
+        db.insertRow(start, 0);
         
         List<Future<Void>> tasks = new ArrayList<>();
 
@@ -59,7 +57,7 @@ public class WebCrawler {
 
             if (visit == null) break;
 
-            CrawlerThread task = new CrawlerThread(visit, conn);
+            CrawlerThread task = new CrawlerThread(visit, db);
             tasks.add(executor.submit(task));
         }
 
