@@ -1,14 +1,10 @@
 package net.webcrawler;
 
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
+import java.sql.*;
 
 public class DBConn {
     
-    private Connection conn;
+    private Connection db;
 
     // connection to DB
     public Connection connect() {
@@ -16,9 +12,9 @@ public class DBConn {
         String url = "jdbc:sqlite:C:/Users/Krem/Tools/sqlite/chinook.db";
 
         try {
-            conn = DriverManager.getConnection(url);
+            db = DriverManager.getConnection(url);
             // System.out.println("Connected to SQLite.");
-            return conn;
+            return db;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
             return null;
@@ -32,9 +28,9 @@ public class DBConn {
                 + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                 + "url TEXT NOT NULL,"
                 + "seen INTEGER NOT NULL"
-                + ");";
+                + ")";
 
-        try (Statement stmt = conn.createStatement()) {
+        try (Statement stmt = db.createStatement()) {
             stmt.execute(sql);
             // System.out.println("Table created.");
         } catch (SQLException e) {
@@ -48,8 +44,8 @@ public class DBConn {
         String sqlInsert = "INSERT OR IGNORE INTO urls (url, seen) VALUES (?, ?)";
         String sqlUpdate = "UPDATE urls SET seen = seen + 1 WHERE url = ?";
 
-        try (PreparedStatement insertStmt = conn.prepareStatement(sqlInsert);
-             PreparedStatement updateStmt = conn.prepareStatement(sqlUpdate)) {
+        try (PreparedStatement insertStmt = db.prepareStatement(sqlInsert);
+             PreparedStatement updateStmt = db.prepareStatement(sqlUpdate)) {
 
             insertStmt.setString(1, url);
             insertStmt.setInt(2, seen);
@@ -70,7 +66,7 @@ public class DBConn {
         
         String sql = "DROP TABLE IF EXISTS urls";
 
-        try (Statement stmt = conn.createStatement()) {
+        try (Statement stmt = db.createStatement()) {
             stmt.execute(sql);
             // System.out.println("Table dropped.");
         } catch (SQLException e) {
@@ -82,9 +78,9 @@ public class DBConn {
     public void disconnect() {
         
         try {
-            if (conn != null && !conn.isClosed()) {
-                conn.close();
-                conn = null;
+            if (db != null && !db.isClosed()) {
+                db.close();
+                db = null;
                 // System.out.println("Connection closed.");
             }
         } catch (SQLException e) {
