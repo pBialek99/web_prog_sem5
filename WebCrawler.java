@@ -9,9 +9,10 @@ public class WebCrawler {
     private ExecutorService executor;
     private int MAX_DEPTH;
 
-    public WebCrawler(int threads) {
+    public WebCrawler(int threads, int MAX_DEPTH) {
         this.db = new DBConn();
         this.executor = Executors.newFixedThreadPool(threads);
+        this.MAX_DEPTH
     }
 
     private String getNext() {
