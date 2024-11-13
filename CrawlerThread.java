@@ -27,11 +27,11 @@ public class CrawlerThread implements Callable<Void> {
             Elements urls = doc.select("a[href]");
 
             for (Element u : urls) {
-                String abs = link.attr("abs:href");
+                String abs = u.attr("abs:href");
                 conn.insertRow(abs, 0);
             }
 
-            dbConn.insertRow(url, 1);
+            conn.insertRow(url, 1);
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
