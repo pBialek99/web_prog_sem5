@@ -45,13 +45,21 @@ public class DBConn {
     // row insertion
     public void insertRow(String url, int seen) {
 
-        String sql = "INSERT INTO urls (url, seen) VALUES (?, ?) ON UPDATE SET seen = seen + 1";
+        String sqlInsert = "INSERT OR IGNORE INTO urls (url, seen) VALUES (?, ?)";
+        String sqlUpdate = "UPDATE urls SET seen = seen + 1 WHERE url = ?";
 
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, url);
-            stmt.setInt(2, seen);
-            stmt.executeUpdate();
-            // System.out.println("Inserted row.");
+        try (PreparedStatement insertStmt = conn.prepareStatement(sqlInsert);
+             PreparedStatement updateStmt = conn.prepareStatement(sqlUpdate)) {
+
+            insertStmt.setString(1, url);
+            insertStmt.setInt(2, seen);
+            insertStmt.executeUpdate();
+
+            if (seen > 0) {
+                updateStmt.setString(1, url);
+                updateStmt.executeUpdate();
+            }
+
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
