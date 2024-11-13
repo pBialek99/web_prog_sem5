@@ -26,10 +26,7 @@ public class CrawlerThread implements Callable<Void> {
             Document doc = Jsoup.connect(url).get();
             Elements urls = doc.select("a[href]");
 
-            for (Element u : urls) {
-                String abs = u.attr("abs:href");
-                conn.insertRow(abs, 0);
-            }
+            urls.forEach(u -> conn.insertRow(u.absUrl("href"), 0));
 
             conn.insertRow(url, 1);
         } catch (IOException e) {
