@@ -7,10 +7,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 public class DBConn {
+    
     private Connection conn;
 
     // connection to DB
     public Connection connect() {
+        
         String url = "jdbc:sqlite:C:/Users/Krem/Tools/sqlite/chinook.db";
 
         try {
@@ -25,6 +27,7 @@ public class DBConn {
 
     // table creation
     public void createTable() {
+        
         String sql = "CREATE TABLE IF NOT EXISTS urls ("
                 + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                 + "url TEXT NOT NULL,"
@@ -56,6 +59,7 @@ public class DBConn {
 
     // table dropping
     public void dropTable() {
+        
         String sql = "DROP TABLE IF EXISTS urls";
 
         try (Statement stmt = conn.createStatement()) {
@@ -68,6 +72,7 @@ public class DBConn {
 
     // disconnect DB
     public void disconnect() {
+        
         try {
             if (conn != null && !conn.isClosed()) {
                 conn.close();
