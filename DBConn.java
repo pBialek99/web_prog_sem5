@@ -9,14 +9,18 @@ public class DBConn {
     public Connection connect() {
         String url = "jdbc:sqlite:C:/Users/Krem/Tools/sqlite/chinook.db";
 
-        try {
-            db = DriverManager.getConnection(url);
-            // System.out.println("Connected to SQLite.");
-            return db;
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
+        // connect to DB only if not already connected
+        if (db != null) {
+            try {
+                db = DriverManager.getConnection(url);
+                // System.out.println("Connected to SQLite.");
+                
+                return db;
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
             
-            return null;
+                return null;
+            }
         }
     }
 
