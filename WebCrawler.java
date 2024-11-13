@@ -59,7 +59,7 @@ public class WebCrawler {
             }
         }
 
-        executorService.shutdown();
+        executor.shutdown();
         conn.disconnect();
     }
 
