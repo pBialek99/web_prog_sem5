@@ -4,8 +4,6 @@ import java.sql.*;
 
 public class DBConn {
     private Connection db;
-    // object used for synchronization
-    private Object lock = new Object();
     
     // connection to DB
     public Connection connect() {
@@ -44,22 +42,20 @@ public class DBConn {
 
     // row insertion
     public void insertRow(String url, int seen) {
-        synchronised (lock) {
-            String sqlInsert = "INSERT OR IGNORE INTO urls (url, seen) VALUES (?, ?)";
-            String sqlUpdate = "UPDATE urls SET seen = seen + 1 WHERE url = ?";
+        String sqlInsert = "INSERT OR IGNORE INTO urls (url, seen) VALUES (?, ?)";
+        String sqlUpdate = "UPDATE urls SET seen = seen + 1 WHERE url = ?";
     
-            try (PreparedStatement insertStmt = db.prepareStatement(sqlInsert); PreparedStatement updateStmt = db.prepareStatement(sqlUpdate)) {
-                insertStmt.setString(1, url);
-                insertStmt.setInt(2, seen);
-                insertStmt.executeUpdate();
+        try (PreparedStatement insertStmt = db.prepareStatement(sqlInsert); PreparedStatement updateStmt = db.prepareStatement(sqlUpdate)) {
+            insertStmt.setString(1, url);
+            insertStmt.setInt(2, seen);
+            insertStmt.executeUpdate();
     
-                if (seen > 0) {
-                    updateStmt.setString(1, url);
-                    updateStmt.executeUpdate();
-                }
-            } catch (SQLException e) {
-                System.out.println(e.getMessage());
+            if (seen > 0) {
+                updateStmt.setString(1, url);
+                updateStmt.executeUpdate();
             }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
         }
     }
 
