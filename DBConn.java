@@ -14,21 +14,20 @@ public class DBConn {
             try {
                 db = DriverManager.getConnection(url);
                 // System.out.println("Connected to SQLite.");
-                
-                return db;
             } catch (SQLException e) {
                 System.out.println(e.getMessage());
             
                 return null;
             }
         }
+        return db;
     }
 
     // table creation
     public void createTable() {
         String sql = "CREATE TABLE IF NOT EXISTS urls ("
                 + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-                + "url TEXT NOT NULL,"
+                + "url TEXT NOT NULL UNIQUE,"
                 + "seen INTEGER NOT NULL"
                 + ")";
 
