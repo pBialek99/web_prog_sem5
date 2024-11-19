@@ -12,7 +12,7 @@ public class DBConn {
         String url = "jdbc:sqlite:C:/Users/Krem/Tools/sqlite/chinook.db";
 
         // connect to DB only if not already connected
-        if (db != null) {
+        if (db == null) {
             try {
                 db = DriverManager.getConnection(url);
                 // System.out.println("Connected to SQLite.");
