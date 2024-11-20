@@ -1,70 +1,38 @@
-package net.webcrawler;
-
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.*;
 
 public class WebCrawler {
-    private DBConn db;
-    private ExecutorService executor;
-    private int maxDepth;
-
-    public WebCrawler(int threads, int MAX_DEPTH) {
-        this.db = new DBConn();
-        this.executor = Executors.newFixedThreadPool(threads);
-        this.maxDepth = maxDepth;
-    }
-
-    private String getNext() {
-        String sql = "SELECT url FROM urls WHERE seen = 0 LIMIT 1";
-
-        try (Statement stmt = db.connect().createStatement();
-             ResultSet r = stmt.executeQuery(sql)) {
-
-            if (r.next()) {
-                return r.getString("url");
-            }
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-
-        return null;
-    }
-
-    public void crawl(int depth, String url, List<Future<Void>> tasks) {
-        if (depth > maxDepth) return;
-
-        CrawlerThread task = new CrawlerThread(url, db, depth + 1, maxDepth);
-        tasks.add(executor.submit(task));
-    }
-
-    private void finishCrawler(List<Future<Void>> tasks) {
-        for (Future<Void> t : tasks) {
-            try {
-                t.get();
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-            }
-        }
-
-        executor.shutdown();
-        db.disconnect();
-    }
-
-    private void startCrawler(String start) {
-        db.connect();
-        db.createTable();
-        db.insertRow(start, 0);
-
-        List<Future<Void>> tasks = new ArrayList<>();
-
-        crawl(1, start, tasks);
-
-        finishCrawler(tasks);
-    }
+    private static final int MAX_DEPTH = 3;
+    private static final int THREAS = 10;
 
     public static void main(String[] args) {
-        WebCrawler crawler = new WebCrawler(10, 100);
-        crawler.startCrawler("https://ii.up.krakow.pl");
+        ExecutorService executor = Executors.newFixedThreadPool(THREADS);
+        Set<Future<?>> tasks = new HashSet<>();
+
+        try (Connection connection = DBConn.connect()) {
+            DBConn.createTable(connection);
+            DBConn.insertRow(connection, "https://ii.up.krakow.pl", 0, 0);
+
+            while (!tasks.isEmpty() || DBConn.getNotSeen(connection) != null) {
+                String nextUrl = DBConn.getNotSeen(connection);
+
+                if (nextUrl != null) {
+                    int currentDepth = DBConn.getDepth(connection, nextUrl);
+
+                    if (currentDepth < MAX_DEPTH) {
+                        Runnable crawlerTask = new CrawlerThread(connection, nextUrl, currentDepth + 1, MAX_DEPTH);
+                        tasks.add(executor.submit(crawlerTask));
+                    }
+
+                    DBConn.updateSeen(connection, nextUrl);
+                }
+
+                tasks.removeIf(Future::isDone);
+            }
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        } finally {
+            executor.shutdown();
+        }
     }
 }
