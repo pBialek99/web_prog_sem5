@@ -1,79 +1,66 @@
-package net.webcrawler;
-
 import java.sql.*;
 
 public class DBConn {
-    private Connection db;
+    private static final String DB = "jdbc:sqlite:C:/Users/Krem/Tools/sqlite/chinook.db";
 
-    public Connection connect() {
-        String url = "jdbc:sqlite:C:/Users/Krem/Tools/sqlite/chinook.db";
-
-        if (db == null) {
-            try {
-                db = DriverManager.getConnection(url);
-                // System.out.println("Connected to SQLite.");
-            } catch (SQLException e) {
-                System.out.println(e.getMessage());
-
-                return null;
-            }
-        }
-        return db;
+    public static Connection connect() throws SQLException {
+        return DriverManager.getConnection(DB);
     }
 
-    public void createTable() {
+    public static void createTable(Connection connection) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS urls ("
-                + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-                + "url TEXT NOT NULL UNIQUE,"
-                + "seen INTEGER NOT NULL"
-                + ")";
-
-        try (Statement stmt = db.createStatement()) {
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "url TEXT NOT NULL UNIQUE, "
+                + "depth INTEGER NOT NULL DEFAULT 0, "
+                + "seen INTEGER NOT NULL DEFAULT 0);";
+        
+        try (Statement stmt = connection.createStatement()) {
             stmt.execute(sql);
-            // System.out.println("Table created.");
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
         }
     }
 
-    public void insertRow(String url, int seen) {
-        String sqlInsert = "INSERT OR IGNORE INTO urls (url, seen) VALUES (?, ?)";
-        String sqlUpdate = "UPDATE urls SET seen = seen + 1 WHERE url = ?";
+    public static void insertRow(Connection connection, String url, int depth, int seen) throws SQLException {
+        String sql = "INSERT OR IGNORE INTO urls (url, depth, seen) VALUES (?, ?, ?)";
+        
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, url);
+            stmt.setInt(2, depth);
+            stmt.setInt(3, seen);
+            stmt.executeUpdate();
+        }
+    }
 
-        try (PreparedStatement insertStmt = db.prepareStatement(sqlInsert); PreparedStatement updateStmt = db.prepareStatement(sqlUpdate)) {
-            insertStmt.setString(1, url);
-            insertStmt.setInt(2, seen);
-            insertStmt.executeUpdate();
+    public static void updateSeen(Connection connection, String url) throws SQLException {
+        String sql = "UPDATE urls SET seen = 1 WHERE url = ?";
+        
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, url);
+            stmt.executeUpdate();
+        }
+    }
 
-            if (seen > 0) {
-                updateStmt.setString(1, url);
-                updateStmt.executeUpdate();
+    public static String getNotSeen(Connection connection) throws SQLException {
+        String sql = "SELECT url FROM urls WHERE seen = 0 LIMIT 1";
+        
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            if (rs.next()) {
+                return rs.getString("url");
             }
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
         }
+        return null;
     }
 
-    public void dropTable() {
-        String sql = "DROP TABLE IF EXISTS urls";
-
-        try (Statement stmt = db.createStatement()) {
-            stmt.execute(sql);
-            // System.out.println("Table dropped.");
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
-    public void disconnect() {
-        try {
-            if (db != null && !db.isClosed()) {
-                db.close();
-                db = null;
-                // System.out.println("Connection closed.");
+    public static int getDepth(Connection connection, String url) throws SQLException {
+        String sql = "SELECT depth FROM urls WHERE url = ?";
+        
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, url);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("depth");
             }
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
         }
+        return 0;
     }
 }
