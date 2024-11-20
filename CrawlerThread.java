@@ -1,49 +1,47 @@
-package net.webcrawler;
-
+import org.jsoup.*;
 import java.io.IOException;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.select.Elements;
-import java.util.concurrent.Callable;
-import java.util.ArrayList;
+import java.sql.*;
 
-public class CrawlerThread implements Callable<Void> {
+public class CrawlerThread implements Runnable {
+    private final Connection connection;
     private final String url;
-    private final DBConn db;
     private final int depth;
     private final int maxDepth;
 
-    public CrawlerThread(String url, DBConn db, int depth, int maxDepth) {
+    public CrawlerThread(Connection connection, String url, int depth, int maxDepth) {
+        this.connection = connection;
         this.url = url;
-        this.db = db;
         this.depth = depth;
         this.maxDepth = maxDepth;
     }
 
+    private static boolean isValid(String url) {
+        return url.startsWith("http://") || url.startsWith("https://");
+    }
+
     @Override
-    public Void call() {
+    public void run() {
         if (depth > maxDepth) {
-            return null;
+            return;
         }
 
         try {
-            Document doc = Jsoup.connect(url).get();
-            Elements urls = doc.select("a[href]");
+            Document doc = Jsoup.connect(url).timeout(10000).get();
+            Elements links = doc.select("a[href]");
 
-            db.insertRow(url, 1);
+            for (Element link : links) {
+                String absUrl = link.absUrl("href");
 
-            urls.forEach(u -> {
-                db.insertRow(u.absUrl("href"), 0);
-
-                if (depth + 1 <= maxDepth) {
-                    new WebCrawler(depth + 1, maxDepth).crawl(depth + 1, u.absUrl("href"), new ArrayList<>());
+                if (!isValid(absUrl)) {
+                    continue;
                 }
-            });
-        } catch (IOException e) {
-            System.out.println("Error crawling URL: " + url);
-            System.out.println(e.getMessage());
-        }
 
-        return null;
+                DBConn.insertRow(connection, absUrl, depth, 0);
+                System.out.println(Thread.currentThread().getName() + ": " + absUrl);
+            }
+        } catch (IOException | SQLException e) {
+            System.err.println(Thread.currentThread().getName() + " - Error: " + url);
+            System.err.println(e.getMessage());
+        }
     }
 }
