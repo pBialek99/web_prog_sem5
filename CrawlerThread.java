@@ -2,6 +2,8 @@ import org.jsoup.*;
 import java.io.IOException;
 import java.sql.*;
 
+import DBConn;
+
 public class CrawlerThread implements Runnable {
     private final Connection connection;
     private final String url;
