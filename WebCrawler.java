@@ -1,6 +1,9 @@
 import java.sql.*;
 import java.util.*;
 
+import DBConn;
+import CrawlerThread;
+
 public class WebCrawler {
     private static final int MAX_DEPTH = 3;
     private static final int THREAS = 10;
